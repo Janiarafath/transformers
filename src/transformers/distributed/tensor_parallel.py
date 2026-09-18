@@ -819,19 +819,26 @@ def resolve_parallel_plans(
     are dropped: expert weights are sharded once, by the EP plan.
     """
     # Reject invalid paths before merging, e.g. "layers.*" when the model uses "model.layers.*".
-    layer_names = {name for name, _ in model.named_modules()} | {name for name, _ in model.named_parameters()}
-    layer_names |= {replace_layer_number_by_wildcard(name) for name in layer_names}
-    for plan_name in ("tp_plan", "ep_plan"):
-        override = getattr(distributed_config, plan_name)
-        if isinstance(override, dict):
-            valid_names = layer_names | set(getattr(model, plan_name))
-            for pattern in override:
-                if pattern not in valid_names:
-                    raise ValueError(
-                        f"The `{plan_name}` pattern {pattern!r} does not match any module, parameter, "
-                        f"or existing plan entry in {type(model).__name__}. "
-                        "Check the full path, including any 'model.' prefix."
-                    )
+    model_names = {name for name, _ in model.named_modules()} | {name for name, _ in model.named_parameters()}
+    if isinstance(distributed_config.tp_plan, dict):
+        valid_names = model_names | set(model.tp_plan)
+        for pattern in distributed_config.tp_plan:
+            if not any(fnmatchcase(name, pattern) for name in valid_names):
+                raise ValueError(
+                    f"The `tp_plan` pattern {pattern!r} does not match any module, parameter, "
+                    f"or existing plan entry in {type(model).__name__}. "
+                    "Check the full path, including any 'model.' prefix."
+                )
+
+    if isinstance(distributed_config.ep_plan, dict):
+        valid_names = model_names | set(model.ep_plan)
+        for pattern in distributed_config.ep_plan:
+            if not any(fnmatchcase(name, pattern) for name in valid_names):
+                raise ValueError(
+                    f"The `ep_plan` pattern {pattern!r} does not match any module, parameter, "
+                    f"or existing plan entry in {type(model).__name__}. "
+                    "Check the full path, including any 'model.' prefix."
+                )
 
     if isinstance(distributed_config.tp_plan, dict):
         model._tp_plan = model.tp_plan | distributed_config.tp_plan

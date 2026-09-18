@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import warnings
-from unittest.mock import patch
+from unittest.mock import Mock, call, patch
 
 import torch
 
@@ -237,6 +237,7 @@ class TestParallelPlanResolution(TestCasePlus):
             shard.assert_any_call(experts, name, tp_mesh)
         install_experts.assert_called_once_with(experts, tp_mesh)
         install_router.assert_called_once_with(router, tp_mesh)
+
 
 
 @is_tensor_parallel_test
