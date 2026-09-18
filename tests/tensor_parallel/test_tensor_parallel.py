@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import warnings
-from unittest.mock import Mock, call, patch
+from unittest.mock import patch
 
 import torch
 
@@ -23,7 +23,6 @@ from transformers.distributed.sharding_utils import DtensorShardOperation
 from transformers.distributed.tensor_parallel import (
     ALL_PARALLEL_STYLES,
     ColwiseParallel,
-    EpDispatchExpertsParallel,
     PackedColwiseParallel,
     PackedRowwiseParallel,
     RowwiseParallel,
@@ -244,6 +243,7 @@ class TestParallelPlanResolution(TestCasePlus):
             shard.assert_any_call(experts, name, tp_mesh)
         install_experts.assert_called_once_with(experts, tp_mesh)
         install_router.assert_called_once_with(router, tp_mesh)
+
 
 @is_tensor_parallel_test
 class TestTensorParallelProperties(TestCasePlus):
